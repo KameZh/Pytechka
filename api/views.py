@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 # Create your views here.
 import re
+from datetime import datetime, timezone
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -27,6 +28,57 @@ def huts_list(request):
     )
 
     return Response(serialize_mongo_list(huts))
+
+
+def parse_bbox(request):
+    
+    try:
+        min_lng = float(request.query_params.get("minLng"))
+        min_lat = float(request.query_params.get("minLat"))
+        max_lng = float(request.query_params.get("maxLng"))
+        max_lat = float(request.query_params.get("maxLat"))
+
+    except (TypeError, ValueError):
+        return None
+    
+    return {
+        "coordinates.0": {
+            "$gte": min_lng,
+            "$lte": max_lng
+        },
+        "coordinates.1": {
+            "$gte": min_lat,
+            "$lte": max_lat
+        }
+    }
+
+def apply_common_point_filters(request, base_filter=None):
+    
+    query = dict(base_filter or {})
+
+    bbox_filter = parse_bbox(request)
+    if bbox_filter:
+        query.update(bbox_filter)
+
+    trail_id = request.query_params.get("trailId")
+    if trail_id:
+        query["trailId"] = trail_id
+
+    return query
+
+
+def active_ping_filter():
+    
+    now = datetime.now(timezone.utc)
+
+    return {
+        "resolved": {"$ne": True},
+        "$or": [
+            {"expiresAt": None},
+            {"expiresAt": {"$gt": now}},
+            {"expiresAt": {"$exists": False}},
+        ],
+    }
 
 from bson import ObjectId
 from rest_framework import status
@@ -192,3 +244,45 @@ def trail_detail(request, trail_id):
         return Response({"error": "Trail not found"}, status=status.HTTP_404_NOT_FOUND)
     
     return Response(seriazlize_mongo_document(normalize_trail_document(trail)))
+
+
+@api_view(["GET"])
+def pings_list(request):
+    
+    db = get_mongo_db()
+
+    query = apply_common_point_filters(request, active_ping_filter())
+
+    pings = list(
+        db.pings.find(query).sort("createdAt", -1).limit(1000)
+    )
+
+    return Response(serialize_mongo_list(pings))
+
+
+@api_view(["GET"])
+def photo_pings_list(request):
+    
+    db = get_mongo_db()
+
+    query = apply_common_point_filters(request, active_ping_filter())
+
+    photo_pings = list(
+        db.photopings.find(query).sort("createdAt", -1).limit(1000)
+    )
+
+    return Response(serialize_mongo_list(photo_pings))
+
+
+@api_view(["GET"])
+def clusters_list(request):
+    
+    db = get_mongo_db()
+
+    query = apply_common_point_filters(request, {"resolved": {"$ne": True}})
+
+    clusters = list (
+        db.trashclusters.find(query).sort("createdAt", -1).limit(1000)
+    )
+
+    return Response(serialize_mongo_list(clusters))

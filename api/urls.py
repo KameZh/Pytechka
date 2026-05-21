@@ -8,5 +8,9 @@ urlpatterns = [
   path("trails", views.trails_list),
   path("trails/geojson", views.trails_geojson),
   path("trails/<str:trail_id>", views.trail_detail),
+
+  path("pings", views.pings_list),
+  path("photo-pings", views.photo_pings_list),
+  path("clusters", views.clusters_list)
 ]
 
