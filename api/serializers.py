@@ -13,7 +13,10 @@ def serialize_mongo_value(value):
     return [serialize_mongo_value(item) for item in value]
   
   if isinstance(value, dict):
-    return serialize_mongo_value(value)
+    return {
+      key: serialize_mongo_value(val)
+      for key, val in value.items()
+    }
   
   return value
 
