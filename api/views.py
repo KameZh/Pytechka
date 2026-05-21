@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from .mongo import get_mongo_db
 from .mongo_helpers import make_object_id
-from .serializers import serialize_mongo_list, seriazlize_mongo_document, seriazlize_mongo_document
+from .serializers import serialize_mongo_list, serialize_mongo_document
 
 @api_view(["GET"])
 def healthz(request):
@@ -122,24 +122,32 @@ def trails_list(request):
     official_only = request.query_params.get("officialOnly") == "true"
     include_geometry = request.query_params.get("includeGeometry") == "true"
 
-    try:
-        limit = int(request.query_params.get("limit", 300))
-    except ValueError:
-        limit = 300
+    limit_param = request.query_params.get("limit")
 
-    limit = max(1, min(limit, 1000))
+    try:
+        limit = int(limit_param) if limit_param else None
+    except ValueError:
+        limit = None
+
+    if limit is not None:
+      limit = max(1, min(limit, 5000))
 
     search_filter = build_trail_search_filter(search)
 
     user_trails = []
     if not official_only:
         user_trails = list(
-            db.trails.find(search_filter).sort("createdAt", 1).limit(limit)
+            db["trails"].find(search_filter).sort("createdAt", 1)
         )
 
+        if limit is not None:
+            user_trails = user_trails[:limit]
+
     official_trails = list(
-        db.officialTrails.find(search_filter).sort("createdAt", 1).limit(limit)
+        db["official_trails"].find(search_filter).sort("createdAt", 1)
     )
+    if limit is not None:
+        official_trails = official_trails[:limit]
 
     trails = [normalize_trail_document(t) for t in user_trails + official_trails]
 
@@ -149,6 +157,18 @@ def trails_list(request):
             trail.pop("geom", None)
 
     return Response(serialize_mongo_list(trails))
+
+
+def get_trail_geometry(trail):
+    geometry = trail.get("mapGeometry") or trail.get("geojson") or trail.get("geom")
+
+    if not geometry:
+        return None
+
+    if geometry.get("type") == "Feature":
+        return geometry.get("geometry")
+    
+    return geometry
 
 @api_view(["GET"])
 def trails_geojson(request):
@@ -174,10 +194,12 @@ def trails_geojson(request):
     )
 
     official_trails = list(
-        db.officialTrails.find(
+        db["official_trails"].find(
             {"mapGeometry": {"$ne": None}},
             {
                 "name": 1,
+                "name_bg": 1,
+                "name_en": 1,
                 "difficulty": 1,
                 "source": 1,
                 "mapGeometry": 1,
@@ -194,7 +216,7 @@ def trails_geojson(request):
     features = []
 
     for trail in user_trails + official_trails:
-        geometry = trail.get("mapGeometry") or trail.get("geojson")
+        geometry = get_trail_geometry(trail)
 
         if not geometry:
             continue
@@ -238,17 +260,16 @@ def trail_detail(request, trail_id):
     trail = db.trails.find_one({"_id": object_id})
 
     if trail is None:
-        trail = db.officialTrails.find_one({"_id": object_id})
+        trail = db["official_trails"].find_one({"_id": object_id})
     
     if trail is None:
         return Response({"error": "Trail not found"}, status=status.HTTP_404_NOT_FOUND)
     
-    return Response(seriazlize_mongo_document(normalize_trail_document(trail)))
+    return Response(serialize_mongo_document(normalize_trail_document(trail)))
 
 
 @api_view(["GET"])
 def pings_list(request):
-    
     db = get_mongo_db()
 
     query = apply_common_point_filters(request, active_ping_filter())

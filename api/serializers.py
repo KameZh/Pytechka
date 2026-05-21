@@ -21,7 +21,7 @@ def serialize_mongo_value(value):
   return value
 
 
-def seriazlize_mongo_document(document):
+def serialize_mongo_document(document):
 
   if document is None:
     return None
@@ -32,4 +32,4 @@ def seriazlize_mongo_document(document):
   }
 
 def serialize_mongo_list(documents):
-    return [seriazlize_mongo_document(document) for document in documents]
+    return [serialize_mongo_document(document) for document in documents]
