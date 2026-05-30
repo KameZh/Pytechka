@@ -1,0 +1,50 @@
+{
+  "name": "pytechka-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/camera": "^7.0.5",
+    "@capacitor/core": "^7.4.2",
+    "@capacitor/local-notifications": "^7.0.6",
+    "@clerk/clerk-react": "^5.61.4",
+    "@mapbox/mapbox-gl-draw": "^1.5.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@tmcw/togeojson": "^7.1.2",
+    "@turf/turf": "^7.3.4",
+    "axios": "^1.13.6",
+    "localforage": "^1.10.0",
+    "mapbox-gl": "^3.20.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-map-gl": "^8.1.0",
+    "react-router-dom": "^7.13.2",
+    "svix": "^1.89.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.2",
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2",
+    "vite": "^8.0.1",
+    "vite-plugin-pwa": "^1.2.0"
+  }
+}

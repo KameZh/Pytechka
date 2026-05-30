@@ -30,6 +30,25 @@ def huts_list(request):
     return Response(serialize_mongo_list(huts))
 
 
+@api_view(["GET"])
+def user_profile(request):
+    db = get_mongo_db()
+    created_trails_count = db["trails"].count_documents({})
+
+    return Response(
+        {
+            "username": "",
+            "email": "",
+            "avatarUrl": "",
+            "badgeProgress": {
+                "trailCompletions": 0,
+                "createdTrails": created_trails_count,
+                "campaignPoints": 0,
+            },
+        }
+    )
+
+
 def parse_bbox(request):
     
     try:
@@ -159,6 +178,15 @@ def trails_list(request):
     return Response(serialize_mongo_list(trails))
 
 
+@api_view(["GET"])
+def my_trails(request):
+    db = get_mongo_db()
+
+    trails = list(db["trails"].find({}).sort("createdAt", -1))
+
+    return Response(serialize_mongo_list([normalize_trail_document(trail) for trail in trails]))
+
+
 def get_trail_geometry(trail):
     geometry = trail.get("mapGeometry") or trail.get("geojson") or trail.get("geom")
 
@@ -169,6 +197,25 @@ def get_trail_geometry(trail):
         return geometry.get("geometry")
     
     return geometry
+
+
+def iter_line_geometries(geometry):
+    if not isinstance(geometry, dict):
+        return
+
+    geometry_type = geometry.get("type")
+
+    if geometry_type in {"LineString", "MultiLineString"}:
+        yield geometry
+        return
+
+    if geometry_type == "Feature":
+        yield from iter_line_geometries(geometry.get("geometry"))
+        return
+
+    if geometry_type == "FeatureCollection":
+        for feature in geometry.get("features", []) or []:
+            yield from iter_line_geometries(feature)
 
 @api_view(["GET"])
 def trails_geojson(request):
@@ -220,33 +267,28 @@ def trails_geojson(request):
 
         if not geometry:
             continue
-        
-        if isinstance(geometry, dict) and geometry.get("type") and geometry.get("coordinates"):
-            geometry = geometry
-      
-        if not geometry:
-          continue
-    
-        features.append({
-            "type": "Feature",
-            "properties": {
-                "id": str(trail.get("_id")),
-                "name": trail.get("name"),
-                "difficulty": trail.get("difficulty", "moderate"),
-                "source": trail.get("source", "user"),
-                "ref": trail.get("ref", ""),
-                "colour_type": trail.get("colour_type", "unmarked"),
-                "osm_colour": trail.get("osm_colour", ""),
-                "stats": trail.get("stats", {}),
-                "trailMarks": trail.get("trailMarks", []),
-            },
-            "geometry": geometry,
-        })
 
-        return Response({
-            "type": "FeatureCollection",
-            "features": serialize_mongo_list(features),
-        })
+        for line_geometry in iter_line_geometries(geometry):
+            features.append({
+                "type": "Feature",
+                "properties": {
+                    "id": str(trail.get("_id")),
+                    "name": trail.get("name"),
+                    "difficulty": trail.get("difficulty", "moderate"),
+                    "source": trail.get("source", "user"),
+                    "ref": trail.get("ref", ""),
+                    "colour_type": trail.get("colour_type", "unmarked"),
+                    "osm_colour": trail.get("osm_colour", ""),
+                    "stats": trail.get("stats", {}),
+                    "trailMarks": trail.get("trailMarks", []),
+                },
+                "geometry": line_geometry,
+            })
+
+    return Response({
+        "type": "FeatureCollection",
+        "features": serialize_mongo_list(features),
+    })
     
 @api_view(["GET"])
 def trail_detail(request, trail_id):

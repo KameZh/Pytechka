@@ -1,0 +1,48 @@
+@import 'tailwindcss';
+@import './pages/Explore.css';
+@import './components/components.css';
+@import './pages/Auth.css';
+@import 'tailwindcss/preflight';
+
+@theme {
+  --color-primary: #4281a4;
+  --color-secondary: #48a9a6;
+  --color-background: #fbfef9;
+  --color-surface: #191923;
+  --color-ink: #000100;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+:root {
+  --app-bottom-nav-space: calc(112px + env(safe-area-inset-bottom, 0px));
+  --ink-80: rgba(0, 1, 0, 0.8);
+  --ink-65: rgba(0, 1, 0, 0.65);
+  --ink-50: rgba(0, 1, 0, 0.5);
+  --ink-40: rgba(0, 1, 0, 0.4);
+  --ink-30: rgba(0, 1, 0, 0.3);
+  --surface-weak: rgba(25, 25, 35, 0.04);
+  --surface-soft: rgba(25, 25, 35, 0.08);
+  --surface-strong: rgba(25, 25, 35, 0.12);
+  --surface-card: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: #121926;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,550 @@
+.rbf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  animation: rbf-fade-in 0.2s ease-out;
+}
+
+@keyframes rbf-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rbf-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.rbf-panel {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 14px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(180deg, rgba(19, 28, 43, 0.97), rgba(15, 21, 31, 0.98));
+  border: 1px solid rgba(66, 129, 164, 0.35);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 18px calc(32px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.4);
+  animation: rbf-slide-up 0.3s ease-out;
+}
+
+.rbf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.rbf-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.rbf-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+.rbf-close-btn:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.rbf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rbf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.rbf-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rbf-input,
+.rbf-select,
+.rbf-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(66, 129, 164, 0.3);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.rbf-input:focus,
+.rbf-select:focus,
+.rbf-textarea:focus {
+  border-color: #48a9a6;
+}
+
+.rbf-select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.rbf-textarea {
+  resize: vertical;
+  min-height: 56px;
+}
+
+.rbf-error {
+  color: #f87171;
+  font-size: 13px;
+  margin: 0;
+  padding: 6px 10px;
+  background: rgba(248, 113, 113, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.rbf-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.rbf-btn {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.rbf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rbf-btn-cancel {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+.rbf-btn-cancel:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+.rbf-btn-publish {
+  background: linear-gradient(135deg, #48a9a6, #4281a4);
+  color: #fff;
+}
+.rbf-btn-publish:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5cbfbc, #4d91b4);
+}
+
+.rbf-marks-section {
+  border: 1px solid rgba(66, 129, 164, 0.28);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(11, 19, 31, 0.45);
+  display: grid;
+  gap: 8px;
+}
+
+.rbf-marks-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rbf-mark-editor-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(66, 129, 164, 0.45);
+  border-radius: 9px;
+  background: rgba(66, 129, 164, 0.18);
+  color: #c7e2f3;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+.rbf-mark-editor-btn:hover {
+  background: rgba(66, 129, 164, 0.28);
+}
+
+.rbf-marks-help,
+.rbf-marks-count {
+  margin: 0;
+  font-size: 12px;
+  color: #9fb8c9;
+}
+
+.rbf-marks-list {
+  display: grid;
+  gap: 6px;
+}
+
+.rbf-mark-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.75);
+  padding: 6px 8px;
+}
+
+.rbf-mark-pill-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(241, 245, 249, 0.55);
+  flex-shrink: 0;
+}
+
+.rbf-mark-pill-text {
+  font-size: 12px;
+  color: #d4e2ee;
+}
+
+.rbf-mark-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  background: rgba(2, 8, 18, 0.82);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.rbf-mark-editor-panel {
+  width: min(96vw, 1080px);
+  max-height: min(94vh, 860px);
+  overflow: auto;
+  border: 1px solid rgba(66, 129, 164, 0.45);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(18, 27, 40, 0.98), rgba(10, 15, 24, 0.99));
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.rbf-mark-editor-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rbf-mark-editor-title {
+  margin: 0;
+  font-size: 18px;
+  color: #f1f5f9;
+}
+
+.rbf-mark-editor-heading {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rbf-mark-editor-subtitle {
+  margin: 0;
+  color: #99b6c8;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.rbf-mark-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rbf-mark-editor-actions .rbf-btn {
+  flex: initial;
+  padding: 10px 12px;
+  min-width: 110px;
+}
+
+.rbf-mark-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.rbf-mark-map-column {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.rbf-mark-side-panel {
+  border: 1px solid rgba(66, 129, 164, 0.3);
+  border-radius: 14px;
+  background: rgba(9, 16, 27, 0.72);
+  padding: 10px;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.rbf-mark-side-section {
+  display: grid;
+  gap: 8px;
+}
+
+.rbf-mark-side-label {
+  color: #8de0dc;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rbf-mark-legend {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.rbf-mark-color-btn {
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #d7e6f3;
+  padding: 8px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.rbf-mark-color-btn.active {
+  border-color: #48a9a6;
+  background: rgba(72, 169, 166, 0.2);
+  color: #ddfaf8;
+}
+
+.rbf-mark-color-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid rgba(241, 245, 249, 0.7);
+}
+
+.rbf-mark-editor-help {
+  margin: 0;
+  border: 1px solid rgba(66, 129, 164, 0.28);
+  border-radius: 10px;
+  background: rgba(8, 15, 26, 0.74);
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #b9d5e6;
+}
+
+.rbf-mark-map-shell {
+  width: 100%;
+  height: clamp(420px, 66vh, 620px);
+  min-height: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(66, 129, 164, 0.34);
+  background: rgba(15, 23, 42, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.rbf-mark-pending-marker {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #0ea5e9;
+  color: #f8fafc;
+  border: 2px solid #f8fafc;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.25);
+  font-size: 11px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.rbf-mark-editor-list {
+  display: grid;
+  gap: 6px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.rbf-mark-editor-item {
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.rbf-mark-editor-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #dde9f4;
+  min-width: 0;
+}
+
+.rbf-mark-editor-item-main span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.rbf-mark-editor-item-main small {
+  color: #8fa9bb;
+  font-size: 11px;
+}
+
+.rbf-mark-remove-btn {
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 9px;
+  cursor: pointer;
+}
+
+.rbf-mark-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.24);
+}
+
+.rbf-mark-empty,
+.rbf-mark-editor-fallback {
+  margin: 0;
+  font-size: 12px;
+  color: #9db5c7;
+}
+
+.rbf-route-endpoint {
+  min-width: 40px;
+  border: 2px solid #f8fafc;
+  border-radius: 999px;
+  padding: 4px 8px;
+  box-shadow: 0 7px 16px rgba(0, 0, 0, 0.34);
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.rbf-route-start {
+  background: #16a34a;
+}
+
+.rbf-route-end {
+  background: #dc2626;
+}
+
+.rbf-mark-editor-fallback {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(66, 129, 164, 0.34);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 16px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .rbf-overlay {
+    align-items: flex-end;
+  }
+
+  .rbf-panel {
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 8px);
+    border-radius: 18px 18px 0 0;
+  }
+
+  .rbf-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin: 6px -6px -10px;
+    padding: 10px 6px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, rgba(15, 21, 31, 0), rgba(15, 21, 31, 0.98) 28%);
+  }
+
+  .rbf-mark-editor-overlay {
+    padding: 8px;
+  }
+
+  .rbf-mark-editor-panel {
+    width: 100%;
+    max-height: 94vh;
+  }
+
+  .rbf-mark-editor-top {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rbf-mark-editor-actions {
+    width: 100%;
+  }
+
+  .rbf-mark-editor-actions .rbf-btn {
+    min-width: 0;
+  }
+
+  .rbf-mark-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .rbf-mark-side-panel {
+    order: -1;
+  }
+
+  .rbf-mark-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rbf-mark-map-shell {
+    height: 54vh;
+    min-height: 320px;
+  }
+}

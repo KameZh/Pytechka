@@ -1,0 +1,6 @@
+{
+  "appId": "bg.pytechka.app",
+  "appName": "Pytechka",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
