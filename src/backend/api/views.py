@@ -3,13 +3,18 @@ from django.shortcuts import render
 # Create your views here.
 import re
 from datetime import datetime, timezone
+from typing import Any
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .mongo import get_mongo_db
+from .mongo import COLLECTIONS, get_mongo_db
 from .mongo_helpers import make_object_id
 from .serializers import serialize_mongo_list, serialize_mongo_document
+from .services.badges import build_badge_update_document, increment_badge_progress, normalize_badge_progress
+from .services.offline import OfflineArea, estimate_tile_count, normalize_resource_types, summarize_packs
+from .services.pings import add_unique_vote, ping_expiration
+from .validators import validate_offline_download_payload
 
 @api_view(["GET"])
 def healthz(request):
@@ -310,19 +315,45 @@ def trail_detail(request, trail_id):
     return Response(serialize_mongo_document(normalize_trail_document(trail)))
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 def pings_list(request):
     db = get_mongo_db()
 
-    query = apply_common_point_filters(request, active_ping_filter())
+    if request.method == "GET":
+        query = apply_common_point_filters(request, active_ping_filter())
+        pings = list(db.pings.find(query).sort("createdAt", -1).limit(1000))
+        return Response(serialize_mongo_list(pings))
 
-    pings = list(
-        db.pings.find(query).sort("createdAt", -1).limit(1000)
-    )
+    user_id = get_request_user_id(request)
+    if not user_id:
+        return Response({"error": "Authentication required"}, status=401)
 
-    return Response(serialize_mongo_list(pings))
+    coordinates = request.data.get("coordinates")
+    if not isinstance(coordinates, list) or len(coordinates) != 2:
+        return Response({"error": "coordinates must be [lng, lat]"}, status=400)
 
+    try:
+        coordinates = [float(coordinates[0]), float(coordinates[1])]
+    except (TypeError, ValueError):
+        return Response({"error": "coordinates must be numeric"}, status=400)
 
+    ping_type = str(request.data.get("type") or "junk").strip() or "junk"
+    now = datetime.now(timezone.utc)
+    document = {
+        "type": ping_type,
+        "coordinates": coordinates,
+        "description": str(request.data.get("description") or "").strip(),
+        "userId": user_id,
+        "resolved": False,
+        "stillThereVotes": [],
+        "goneVotes": [],
+        "expiresAt": ping_expiration(ping_type),
+        "createdAt": now,
+        "updatedAt": now,
+    }
+    result = db[COLLECTIONS.pings].insert_one(document)
+    document["_id"] = result.inserted_id
+    return Response(serialize_mongo_document(document), status=201)
 @api_view(["GET"])
 def photo_pings_list(request):
     
@@ -349,3 +380,210 @@ def clusters_list(request):
     )
 
     return Response(serialize_mongo_list(clusters))
+
+
+def get_request_user_id(request) -> str | None:
+
+    return (
+        request.headers.get("X-User-Id")
+        or request.headers.get("X-Clerk-User-Id")
+        or request.META.get("HTTP_X_USER_ID")
+        or request.META.get("HTTP_X_CLERK_USER_ID")
+    )
+
+
+def count_offline_resources(resource_types: list[str]) -> dict[str, int]:
+
+    db = get_mongo_db()
+    counts: dict[str, int] = {}
+    if "trails" in resource_types:
+        counts["trails"] = db[COLLECTIONS.trails].count_documents({})
+    if "official_trails" in resource_types:
+        counts["official_trails"] = db[COLLECTIONS.official_trails].count_documents({})
+    if "huts" in resource_types:
+        counts["huts"] = db[COLLECTIONS.huts].count_documents({})
+    if "pings" in resource_types:
+        counts["pings"] = db[COLLECTIONS.pings].count_documents({"resolved": {"$ne": True}})
+    if "photo_pings" in resource_types:
+        counts["photo_pings"] = db[COLLECTIONS.photo_pings].count_documents({"resolved": {"$ne": True}})
+    if "clusters" in resource_types:
+        counts["clusters"] = db[COLLECTIONS.trash_clusters].count_documents({"resolved": {"$ne": True}})
+    return counts
+
+
+def build_offline_area(area_payload: dict[str, Any]) -> OfflineArea:
+
+    mode = str(area_payload.get("mode") or "bbox")
+    if mode == "radius":
+        return OfflineArea(mode="radius", center=area_payload.get("center"), radius_km=float(area_payload.get("radiusKm") or 0))
+    return OfflineArea(mode="bbox", bbox=area_payload.get("bbox"))
+
+
+@api_view(["GET", "POST"])
+def offline_downloads(request):
+
+    user_id = get_request_user_id(request)
+    if not user_id:
+        return Response({"error": "Authentication required"}, status=401)
+
+    db = get_mongo_db()
+    collection = db[COLLECTIONS.offline_downloads]
+
+    if request.method == "GET":
+        query: dict[str, Any] = {"userId": user_id, "status": {"$ne": "deleted"}}
+        device_id = str(request.query_params.get("deviceId") or "").strip()
+        if device_id:
+            query["deviceId"] = device_id
+        packs = list(collection.find(query).sort("createdAt", -1))
+        return Response({"packs": serialize_mongo_list(packs), "summary": summarize_packs(packs)})
+
+    validation = validate_offline_download_payload(request.data if isinstance(request.data, dict) else {})
+    if not validation.ok:
+        return Response({"error": "Invalid offline download request", "details": validation.errors}, status=400)
+
+    payload = validation.data
+    resource_types = normalize_resource_types(payload.get("resourceTypes"))
+    area = build_offline_area(payload["area"])
+    tile_estimate = estimate_tile_count(area, int(payload["minZoom"]), int(payload["maxZoom"])) if "map_tiles" in resource_types else 0
+    now = datetime.now(timezone.utc)
+    document = {
+        "userId": user_id,
+        "name": payload["name"],
+        "deviceId": payload["deviceId"],
+        "resourceTypes": resource_types,
+        "area": payload["area"],
+        "minZoom": payload["minZoom"],
+        "maxZoom": payload["maxZoom"],
+        "status": "ready",
+        "resources": {"counts": count_offline_resources(resource_types), "tileEstimate": tile_estimate},
+        "createdAt": now,
+        "updatedAt": now,
+    }
+    result = collection.insert_one(document)
+    document["_id"] = result.inserted_id
+    return Response(serialize_mongo_document(document), status=201)
+
+
+@api_view(["GET"])
+def offline_download_status(request):
+
+    user_id = get_request_user_id(request)
+    if not user_id:
+        return Response({"error": "Authentication required"}, status=401)
+
+    query: dict[str, Any] = {"userId": user_id, "status": {"$ne": "deleted"}}
+    device_id = str(request.query_params.get("deviceId") or "").strip()
+    if device_id:
+        query["deviceId"] = device_id
+    packs = list(get_mongo_db()[COLLECTIONS.offline_downloads].find(query).sort("createdAt", -1))
+    return Response(summarize_packs(packs))
+
+
+@api_view(["GET", "DELETE"])
+def offline_download_detail(request, download_id):
+
+    user_id = get_request_user_id(request)
+    if not user_id:
+        return Response({"error": "Authentication required"}, status=401)
+
+    object_id = make_object_id(download_id)
+    if object_id is None:
+        return Response({"error": "Invalid offline download id"}, status=400)
+
+    collection = get_mongo_db()[COLLECTIONS.offline_downloads]
+    pack = collection.find_one({"_id": object_id, "userId": user_id})
+    if not pack or pack.get("status") == "deleted":
+        return Response({"error": "Offline download not found"}, status=404)
+
+    if request.method == "GET":
+        return Response(serialize_mongo_document(pack))
+
+    collection.update_one({"_id": object_id}, {"$set": {"status": "deleted", "updatedAt": datetime.now(timezone.utc)}})
+    return Response({"success": True, "deletedId": str(object_id)})
+
+
+
+def parse_positive_amount(value, default: int = 1) -> int:
+
+    try:
+        amount = int(value)
+    except (TypeError, ValueError):
+        amount = default
+    return max(1, min(amount, 100))
+
+
+def update_badge_progress(user_id: str, increments: dict[str, int]) -> dict[str, Any]:
+
+    users = get_mongo_db()[COLLECTIONS.users]
+    user = users.find_one({"clerkId": user_id}) or {"clerkId": user_id, "badgeProgress": {}}
+    progress = increment_badge_progress(user.get("badgeProgress"), increments)
+    update_document = build_badge_update_document(progress)
+
+    if user.get("_id"):
+        users.update_one({"_id": user["_id"]}, {"$set": update_document})
+        user.update(update_document)
+        return user
+
+    user.update(update_document)
+    result = users.insert_one(user)
+    user["_id"] = result.inserted_id
+    return user
+
+
+@api_view(["POST"])
+def badge_trailer_complete(request):
+
+    user_id = get_request_user_id(request)
+    if not user_id:
+        return Response({"error": "Authentication required"}, status=401)
+
+    amount = parse_positive_amount(request.data.get("amount"), 1)
+    updated = update_badge_progress(user_id, {"trailCompletions": amount})
+    return Response({"badgeProgress": normalize_badge_progress(updated.get("badgeProgress"))})
+
+
+@api_view(["POST"])
+def badge_campaign_participate(request):
+
+    user_id = get_request_user_id(request)
+    if not user_id:
+        return Response({"error": "Authentication required"}, status=401)
+
+    amount = parse_positive_amount(request.data.get("amount"), 1)
+    updated = update_badge_progress(user_id, {"campaignPoints": amount})
+    return Response({"badgeProgress": normalize_badge_progress(updated.get("badgeProgress"))})
+
+
+
+@api_view(["POST"])
+def ping_vote(request, ping_id):
+
+    object_id = make_object_id(ping_id)
+    if object_id is None:
+        return Response({"error": "Invalid ping id"}, status=400)
+
+    user_id = get_request_user_id(request)
+    if not user_id:
+        return Response({"error": "Authentication required"}, status=401)
+
+    db = get_mongo_db()
+    ping = db[COLLECTIONS.pings].find_one({"_id": object_id})
+    if not ping:
+        return Response({"error": "Ping not found"}, status=404)
+
+    vote_type = str(request.data.get("vote") or request.data.get("voteType") or "still_there")
+    update: dict[str, Any] = {"updatedAt": datetime.now(timezone.utc)}
+    if vote_type in {"gone", "not_there", "resolved"}:
+        votes, added = add_unique_vote(ping.get("goneVotes") or [], user_id)
+        update["goneVotes"] = votes
+        if len(votes) >= 3:
+            update["resolved"] = True
+    else:
+        votes, added = add_unique_vote(ping.get("stillThereVotes") or [], user_id)
+        update["stillThereVotes"] = votes
+
+    db[COLLECTIONS.pings].update_one({"_id": object_id}, {"$set": update})
+    ping.update(update)
+    return Response({"success": True, "added": added, "ping": serialize_mongo_document(ping)})
+
+
