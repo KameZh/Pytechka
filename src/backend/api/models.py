@@ -1,3 +1,3 @@
 from django.db import models
 
-# Create your models here.
+# Използваме mongodb, затова нямаме нужда от Django ORM модели.

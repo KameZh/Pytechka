@@ -1,3 +1,3 @@
 from django.contrib import admin
 
-# Register your models here.
+# Използваме mongodb, затова нямаме нужда от Django ORM модели.
