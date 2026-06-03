@@ -29,7 +29,9 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or "django-insecure-secret-key"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    os.getenv("NGROK_HOST"), #created to add andoid support
+]
 
 
 # Application definition
@@ -129,6 +131,7 @@ STATIC_URL = 'static/'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://3d6f-46-10-148-44.ngrok-free.app"
 ]
 
 CORS_ALLOW_CREDENTIALS = True

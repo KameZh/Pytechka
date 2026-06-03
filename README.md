@@ -42,7 +42,7 @@ Pytechka е web/app приложение, целящо да насърчава �
 4. Попълнете `.env` файловете по техните шаблони и ги оставете в същата директория като шаблона.
 5. Стартирайте приложението:
 ```bash
-    cd ./src/frontend && npm run dev
+    cd ./src/frontend && npm run build && npm run dev
     cd ../backend && python manage.py runserver 8000
 ```
 
