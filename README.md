@@ -37,7 +37,7 @@ Pytechka е web/app приложение, целящо да насърчава �
 3. Инсталирайте зависимостите и в двете поддиректории:
 ```bash
     pip install -r requirements.txt
-    cd ./src/frontend && npm install
+    cd ./src/frontend && npm install --legacy-peer-deps
 ```
 4. Попълнете `.env` файловете по техните шаблони и ги оставете в същата директория като шаблона.
 5. Стартирайте приложението:
