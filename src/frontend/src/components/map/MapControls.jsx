@@ -272,6 +272,8 @@ export default function MapControls({
     toggleMapStyle,
     toggleTerrain,
     toggleHillshadeRelief,
+    showTrails,
+    toggleShowTrails,
   } = useMapStore()
 
   return (
@@ -342,22 +344,31 @@ export default function MapControls({
               label="Toggle 3D terrain"
             />
           </div>
-
           {onTogglePitch ? (
             <div style={styles.settingRow}>
               <div style={styles.settingLabel}>
                 <span>Tilted view</span>
                 <span style={styles.settingHint}>Quick perspective angle</span>
               </div>
-              <button
-                type="button"
+              <ToggleSwitch
+                active={false}
                 onClick={() => onTogglePitch?.()}
-                style={styles.miniButton}
-              >
-                Toggle
-              </button>
+                label="Toggle tilted view"
+              />
             </div>
           ) : null}
+
+          <div style={styles.settingRow}>
+            <div style={styles.settingLabel}>
+              <span>Trails</span>
+              <span style={styles.settingHint}>Show or hide trail overlay</span>
+            </div>
+            <ToggleSwitch
+              active={showTrails}
+              onClick={toggleShowTrails}
+              label="Toggle trails overlay"
+            />
+          </div>
 
           <div
             style={{

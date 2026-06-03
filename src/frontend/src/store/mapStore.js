@@ -11,6 +11,8 @@ export const useMapStore = create((set) => ({
 
   hillshadeRelief: false,
 
+  showTrails: true,
+
   trailsVersion: 0,
 
   setMode: (mode) => set({ mode }),
@@ -26,6 +28,7 @@ export const useMapStore = create((set) => ({
           ? 'satellite-streets-v12'
           : 'outdoors-v12',
     })),
+  toggleShowTrails: () => set((s) => ({ showTrails: !s.showTrails })),
   huts: [],
   setHuts: (huts) => set({ huts }),
   selectedHut: null,

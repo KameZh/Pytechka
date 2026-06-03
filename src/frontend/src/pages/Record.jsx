@@ -414,6 +414,7 @@ export default function Record() {
     setSelectedTrail,
     setMode,
     selectedTrail,
+    showTrails,
   } = useMapStore()
 
   const [viewState, setViewState] = useState(INITIAL_VIEW)
@@ -1635,43 +1636,12 @@ export default function Record() {
             </Source>
           ) : null}
 
-          <TrailMapLayers
-            sourceId="record-trails-source"
-            layerPrefix={RECORD_TRAIL_LAYER_PREFIX}
-            data={visibleTrailSourceCollection}
-          />
-
-          {hasVectorTileset ? (
-            <Source
-              id="record-custom-tileset-source"
-              type="vector"
-              url={MAPBOX_TILESET_URL}
-            >
-              <Layer
-                id="record-custom-tileset-layer"
-                type="line"
-                source="record-custom-tileset-source"
-                source-layer={MAPBOX_TILESET_SOURCE_LAYER}
-                paint={{
-                  'line-color': MAPBOX_TILESET_LINE_COLOR,
-                  'line-width': MAPBOX_TILESET_LINE_WIDTH,
-                }}
-              />
-            </Source>
-          ) : null}
-
-          {hasRasterTileset ? (
-            <Source
-              id="record-custom-tileset-source"
-              type="raster"
-              url={MAPBOX_TILESET_URL}
-            >
-              <Layer
-                id="record-custom-tileset-raster-layer"
-                type="raster"
-                paint={{ 'raster-opacity': 0.9 }}
-              />
-            </Source>
+          {showTrails ? (
+            <TrailMapLayers
+              sourceId="record-trails-source"
+              layerPrefix={RECORD_TRAIL_LAYER_PREFIX}
+              data={visibleTrailSourceCollection}
+            />
           ) : null}
 
           {routeGeoJSON && (

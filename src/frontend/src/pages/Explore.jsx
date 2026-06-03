@@ -7,6 +7,7 @@ import {
   circle as turfCircle,
 } from '@turf/turf'
 import BottomNav from '../components/layout/Bottomnav'
+import { useMapStore } from '../store/mapStore'
 import TrailCard from '../components/explore/TrailCard'
 import TrailDetailPopup from '../components/explore/TrailDetailPopup'
 import {
@@ -124,6 +125,7 @@ export default function Explore() {
   const [activeSort, setActiveSort] = useState(FILTER_DEFAULTS.sort)
   const [officialOnly, setOfficialOnly] = useState(false)
   const [unmarkedOnly, setUnmarkedOnly] = useState(false)
+  const { showTrails, toggleShowTrails } = useMapStore()
   const [regionMapView, setRegionMapView] = useState(INITIAL_REGION_VIEW)
   const [selectedAreaCenter, setSelectedAreaCenter] = useState(null)
   const [selectedAreaRadiusKm, setSelectedAreaRadiusKm] = useState(8)
@@ -490,6 +492,14 @@ export default function Explore() {
                   >
                     Unmarked
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleShowTrails()}
+                    aria-pressed={showTrails}
+                    className={`explore-filter-chip-btn ${showTrails ? 'active' : ''}`}
+                  >
+                    Trails
+                  </button>
                 </div>
 
                 {hasActiveFilters ? (
@@ -633,44 +643,17 @@ export default function Explore() {
                 }}
                 attributionControl={false}
               >
-                <TrailMapLayers
-                  sourceId="explore-trails-source"
-                  layerPrefix={EXPLORE_TRAIL_LAYER_PREFIX}
-                  data={visibleTrailSourceCollection}
-                />
-
-                {hasVectorTileset ? (
-                  <Source
-                    id="explore-custom-tileset-source"
-                    type="vector"
-                    url={MAPBOX_TILESET_URL}
-                  >
-                    <Layer
-                      id="explore-custom-tileset-layer"
-                      type="line"
-                      source="explore-custom-tileset-source"
-                      source-layer={MAPBOX_TILESET_SOURCE_LAYER}
-                      paint={{
-                        'line-color': MAPBOX_TILESET_LINE_COLOR,
-                        'line-width': MAPBOX_TILESET_LINE_WIDTH,
-                      }}
-                    />
-                  </Source>
+                {showTrails ? (
+                  <TrailMapLayers
+                    sourceId="explore-trails-source"
+                    layerPrefix={EXPLORE_TRAIL_LAYER_PREFIX}
+                    data={visibleTrailSourceCollection}
+                  />
                 ) : null}
 
-                {hasRasterTileset ? (
-                  <Source
-                    id="explore-custom-tileset-source"
-                    type="raster"
-                    url={MAPBOX_TILESET_URL}
-                  >
-                    <Layer
-                      id="explore-custom-tileset-raster-layer"
-                      type="raster"
-                      paint={{ 'raster-opacity': 0.9 }}
-                    />
-                  </Source>
-                ) : null}
+                {/** Vector tileset removed — TrailMapLayers controls trail styling */}
+
+                {/** Raster tileset removed — TrailMapLayers controls trail styling */}
 
                 {selectedAreaFeature ? (
                   <Source

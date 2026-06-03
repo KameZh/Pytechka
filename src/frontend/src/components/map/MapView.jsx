@@ -4669,38 +4669,7 @@ export default function MapView({
               </Marker>
             ) : null}
 
-            {hasVectorTileset ? (
-              <Source
-                id="custom-tileset-source"
-                type="vector"
-                url={MAPBOX_TILESET_URL}
-              >
-                <Layer
-                  id="custom-tileset-layer"
-                  type="line"
-                  source="custom-tileset-source"
-                  source-layer={MAPBOX_TILESET_SOURCE_LAYER}
-                  paint={{
-                    'line-color': MAPBOX_TILESET_LINE_COLOR,
-                    'line-width': MAPBOX_TILESET_LINE_WIDTH,
-                  }}
-                />
-              </Source>
-            ) : null}
-
-            {hasRasterTileset ? (
-              <Source
-                id="custom-tileset-source"
-                type="raster"
-                url={MAPBOX_TILESET_URL}
-              >
-                <Layer
-                  id="custom-tileset-raster-layer"
-                  type="raster"
-                  paint={{ 'raster-opacity': 0.9 }}
-                />
-              </Source>
-            ) : null}
+            {/** Custom tileset overlays removed — `TrailMapLayers` defines trail appearance */}
 
             {startPanelSegmentFeatures && !activeTrailSession ? (
               <Source
