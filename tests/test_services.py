@@ -11,7 +11,9 @@ if str(BACKEND_SRC) not in sys.path:
 
 from src.backend.api.services.badges import increment_badge_progress, normalize_badge_progress, pick_tier
 from src.backend.api.services.offline import OfflineArea, estimate_tile_count, normalize_resource_types
-from src.backend.api.services.pings import add_unique_vote, cluster_description, cluster_level_for_count, ping_expiration, required_cluster_votes
+from src.backend.api.services.pings import add_unique_vote, cluster_center, cluster_description, cluster_level_for_count, nearby_pings, ping_expiration, required_cluster_votes
+from src.backend.api.services.telemetry import build_full_trail_enrichment, has_usable_telemetry
+from src.backend.api.services.trails import build_search_filter, filter_by_radius, recalculate_average_accuracy, sort_trails
 
 
 class BadgeServiceTests(unittest.TestCase):
@@ -41,9 +43,6 @@ class OfflineServiceTests(unittest.TestCase):
         self.assertGreater(estimate_tile_count(area, 10, 12), 0)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 class PingServiceTests(unittest.TestCase):
     def test_ping_expiration_for_temporary_types(self) -> None:
         self.assertIsNotNone(ping_expiration("mud"))
@@ -59,4 +58,49 @@ class PingServiceTests(unittest.TestCase):
         votes, added = add_unique_vote(votes, "b")
         self.assertFalse(added)
 
+    def test_nearby_pings_and_center(self) -> None:
+        pings = [
+            {"coordinates": [23.0, 42.0]},
+            {"coordinates": [23.001, 42.0]},
+            {"coordinates": [24.0, 43.0]},
+        ]
+        close = nearby_pings([23.0, 42.0], pings, 300)
+        self.assertEqual(len(close), 2)
+        center = cluster_center(close)
+        self.assertAlmostEqual(center[0], 23.0005, places=4)
 
+
+class TrailServiceTests(unittest.TestCase):
+    def test_search_filter_targets_expected_fields(self) -> None:
+        search_filter = build_search_filter("Rila")
+        self.assertIsNotNone(search_filter)
+        self.assertGreaterEqual(len(search_filter or []), 5)
+
+    def test_sort_and_rating_helpers(self) -> None:
+        trails = [{"name": "a", "averageAccuracy": 1}, {"name": "b", "averageAccuracy": 5}]
+        self.assertEqual(sort_trails(trails, "popular")[0]["name"], "b")
+        self.assertEqual(recalculate_average_accuracy([{"accuracy": 5}, {"accuracy": 3}]), 4.0)
+
+    def test_radius_filter_uses_start_point(self) -> None:
+        trails = [{"startCoordinates": [23.0, 42.0]}, {"startCoordinates": [24.0, 43.0]}]
+        self.assertEqual(len(filter_by_radius(trails, [23.0, 42.0], 1)), 1)
+
+
+class TelemetryServiceTests(unittest.TestCase):
+    def test_full_trail_enrichment_adds_map_fields(self) -> None:
+        trail = {
+            "geojson": {
+                "type": "LineString",
+                "coordinates": [[23, 42, 500], [23.01, 42, 550], [23.02, 42, 520]],
+            },
+            "trailMarks": [{"colourType": "red", "startIndex": 0, "endIndex": 2}],
+        }
+        enriched = build_full_trail_enrichment(trail)
+        self.assertIn("stats", enriched)
+        self.assertIn("mapGeometry", enriched)
+        self.assertIn("ai", enriched)
+        self.assertTrue(has_usable_telemetry(enriched))
+
+
+if __name__ == "__main__":
+    unittest.main()
