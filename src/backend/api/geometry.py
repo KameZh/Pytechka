@@ -15,8 +15,6 @@ def normalize_string(value: Any) -> str:
 
 
 def extract_coordinates(geojson: dict[str, Any] | None) -> list[list[float]]:
-    """Flatten GeoJSON LineString/MultiLineString/Feature data into coordinates."""
-
     if not isinstance(geojson, dict):
         return []
     geo_type = geojson.get("type")
@@ -39,8 +37,6 @@ def extract_coordinates(geojson: dict[str, Any] | None) -> list[list[float]]:
 
 
 def extract_line_geometries(geojson: dict[str, Any] | None) -> list[dict[str, Any]]:
-    """Return only line-like geometries from a GeoJSON object."""
-
     if not isinstance(geojson, dict):
         return []
     geo_type = geojson.get("type")
@@ -159,8 +155,6 @@ def merge_numeric_stats(base: dict[str, Any], extras: dict[str, Any] | None) -> 
 
 
 def calculate_enriched_stats(geojson: dict[str, Any] | None, submitted_stats: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Calculate telemetry, trusting submitted Mapbox stats only when useful."""
-
     base = calculate_stats(geojson)
     merged = merge_numeric_stats(base, submitted_stats)
     elevation_gain = float(merged.get("elevationGain") or 0)

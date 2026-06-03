@@ -6,10 +6,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 from rest_framework.decorators import api_view
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from .mongo import COLLECTIONS, get_mongo_db
 from .mongo_helpers import make_object_id
+from .auth import ensure_user_document, get_request_user_id
 from .serializers import serialize_mongo_list, serialize_mongo_document
 from .services.badges import build_badge_update_document, increment_badge_progress, normalize_badge_progress
 from .services.offline import OfflineArea, estimate_tile_count, normalize_resource_types, summarize_packs
@@ -182,6 +184,12 @@ def trails_list(request):
 
     return Response(serialize_mongo_list(trails))
 
+@api_view(["GET"])
+def user_profile(request: Request) -> Response:
+    _user_id, user, auth_error = ensure_user_document(request)
+    if auth_error:
+        return Response({"username": "", "email": "", "avatarUrl": "", "badgeProgress": {"trailCompletions": 0, "createdTrails": 0, "campaignPoints": 0, "awarded": {}}})
+    return Response(serialize_mongo_document(user))
 
 @api_view(["GET"])
 def my_trails(request):
