@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import asin, cos, radians, sin, sqrt
 from typing import Any
+
+from ..geometry import haversine_meters
 
 DOWNLOAD_RESOURCE_TYPES = {"trails", "official_trails", "huts", "pings", "photo_pings", "clusters", "map_tiles"}
 DOWNLOAD_STATUSES = {"queued", "ready", "failed", "deleted"}
@@ -16,16 +17,6 @@ class OfflineArea:
     center: list[float] | None = None
     radius_km: float | None = None
 
-
-def haversine_meters(first: list[float], second: list[float]) -> float:
-
-    first_lng, first_lat = first
-    second_lng, second_lat = second
-    earth_radius_m = 6_371_000
-    delta_lat = radians(second_lat - first_lat)
-    delta_lng = radians(second_lng - first_lng)
-    a = sin(delta_lat / 2) ** 2 + cos(radians(first_lat)) * cos(radians(second_lat)) * sin(delta_lng / 2) ** 2
-    return 2 * earth_radius_m * asin(sqrt(a))
 
 
 def normalize_resource_types(values: Any) -> list[str]:
