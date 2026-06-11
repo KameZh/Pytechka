@@ -21,7 +21,7 @@ Pytechka е web/app приложение, целящо да насърчава �
 
 1. Клонирайте проекта и влезте в папката му.
 ```bash
-    git clone github.com/KameZh/Pytechka
+    git clone https://github.com/KameZh/Pytechka.git
 ```
 2. Активирайте virtual environment
 ##### * за Windows
